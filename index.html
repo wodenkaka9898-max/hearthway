@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>小黄书 · 线路导航</title>
+<meta property="og:title" content="小黄书 · 线路导航">
+<meta property="og:description" content="选择一条可用线路访问小黄书">
+<style>
+/* 设计语言对齐新版 H5 落地页（square）+ Figma 中间页稿 3846:5926（402 宽基准，--k 等比缩放，桌面居中封顶）。 */
+:root{
+  --w:460px;                       /* 内容最大宽度（桌面封顶；手机为视口宽） */
+  --k:calc(min(100vw,var(--w))/402);
+  --bg:#f5f5f5; --ink:#1b1b1b; --brand:#fed105; --sub:#848484; --ok:#37da98; --card:#fff;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);overflow-x:clip}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif;color:var(--ink)}
+.wrap{max-width:var(--w);margin:0 auto;min-height:100vh;background:var(--bg);position:relative}
+
+/* 顶部 hero：黄色品牌底兜底（图加载不出也不塌），照片盖上、底部渐变压暗放标语 */
+.hero{position:relative;width:100%;height:calc(533*var(--k));background:var(--brand)}
+.hero__photo{position:absolute;inset:0 0 auto 0;height:calc(507*var(--k));
+  background:var(--hero,none) center top/cover no-repeat}
+.hero__fade{position:absolute;left:0;right:0;bottom:calc(97*var(--k));height:calc(150*var(--k));
+  background:linear-gradient(180deg,rgba(27,27,27,0) 0%,rgba(27,27,27,.72) 100%)}
+.hero__slogan{position:absolute;left:0;right:0;bottom:calc(109*var(--k));text-align:center;
+  color:#fff;font-size:calc(15*var(--k));font-weight:380;line-height:calc(20*var(--k));padding:0 calc(20*var(--k))}
+
+/* 内容面板：圆角上沿盖住 hero 底部 */
+.panel{position:relative;margin-top:calc(-97*var(--k));background:var(--bg);
+  border-radius:calc(33*var(--k)) calc(33*var(--k)) 0 0;padding:calc(27*var(--k)) calc(28*var(--k)) calc(24*var(--k))}
+
+#notice{display:none;background:#fff4cf;color:#8a6d00;border:1px solid var(--brand);
+  border-radius:calc(12*var(--k));padding:calc(10*var(--k)) calc(14*var(--k));margin-bottom:calc(14*var(--k));font-size:calc(13*var(--k))}
+
+/* 线路卡：白卡圆角 15，标题+徽章一行，host 一行，右侧 chevron */
+.lines{display:flex;flex-direction:column;gap:calc(6*var(--k))}
+.line{display:flex;align-items:center;gap:calc(10*var(--k));background:var(--card);
+  border-radius:calc(15*var(--k));padding:calc(14*var(--k)) calc(18*var(--k));
+  text-decoration:none;color:inherit;min-height:calc(65*var(--k))}
+.line[aria-disabled=true]{opacity:.55}
+.line__main{flex:1;min-width:0}
+.line__top{display:flex;align-items:center;gap:calc(10*var(--k))}
+.line__name{font-size:calc(15*var(--k));font-weight:520;line-height:calc(20*var(--k))}
+.line__host{margin-top:calc(3*var(--k));font-size:calc(12*var(--k));font-weight:380;color:var(--sub);word-break:break-all}
+.badge{flex:none;border-radius:999px;padding:calc(3*var(--k)) calc(13*var(--k));
+  font-size:calc(12*var(--k));line-height:calc(16*var(--k));color:#000}
+.badge--rec{background:var(--brand);font-weight:520}
+.badge--ok{background:var(--ok);font-weight:380}
+.badge--wait,.badge--bad{background:#e7e7e8;color:var(--sub);font-weight:380}
+.line__chev{flex:none;width:calc(9*var(--k));height:calc(15*var(--k));position:relative}
+.line[aria-disabled=true] .line__chev{display:none}
+.line__chev::before,.line__chev::after{content:"";position:absolute;left:0;width:calc(8*var(--k));height:calc(2.6*var(--k));
+  background:var(--ink);border-radius:999px}
+.line__chev::before{top:calc(4*var(--k));transform:rotate(45deg)}
+.line__chev::after{top:calc(8.4*var(--k));transform:rotate(-45deg)}
+
+/* 外联按钮：黑色胶囊，图标+文字横排，自动换行居中 */
+.slots{display:flex;flex-wrap:wrap;justify-content:center;gap:calc(11*var(--k));margin-top:calc(20*var(--k))}
+.slot{display:inline-flex;align-items:center;gap:calc(6*var(--k));background:var(--ink);color:#fff;
+  border-radius:999px;padding:calc(9*var(--k)) calc(18*var(--k));text-decoration:none;
+  font-size:calc(12*var(--k));font-weight:380}
+.slot svg{width:calc(17*var(--k));height:calc(17*var(--k));fill:#fff}
+
+.tip{margin-top:calc(18*var(--k));text-align:center;color:var(--sub);
+  font-size:calc(11*var(--k));font-weight:330;line-height:calc(16*var(--k))}
+.tip b{color:var(--ink);font-weight:520}
+.disclaimer{margin-top:calc(14*var(--k));text-align:center;color:var(--sub);
+  font-size:calc(10*var(--k));font-weight:330;line-height:calc(15*var(--k))}
+
+#empty{display:none;text-align:center;color:var(--sub);font-size:calc(13*var(--k));padding:calc(20*var(--k)) 0}
+#empty button{margin-top:calc(14*var(--k));padding:calc(11*var(--k)) calc(30*var(--k));border:0;
+  border-radius:999px;background:var(--brand);color:var(--ink);font-size:calc(15*var(--k));font-weight:520}
+
+/* 底部下载条：顶部细线 + 黄色圆角大按钮 */
+.dlbar{display:block;text-decoration:none;color:inherit;background:var(--bg);border-top:1px solid rgba(27,27,27,.06);
+  padding:calc(14*var(--k)) calc(51*var(--k)) calc(20*var(--k))}
+.dlbar__btn{display:flex;align-items:center;justify-content:center;gap:calc(8*var(--k));
+  height:calc(45*var(--k));background:var(--brand);color:var(--ink);border-radius:999px;
+  text-decoration:none;font-size:calc(15*var(--k));font-weight:520}
+.dlbar__btn svg{width:calc(20*var(--k));height:calc(20*var(--k));fill:var(--ink)}
+.dlbar[hidden]{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <div class="hero__photo" id="hero-photo"></div>
+    <div class="hero__fade"></div>
+    <div class="hero__slogan">吃瓜讨论 · 交友约炮 · AI成人短剧 · 在线撩骚</div>
+  </div>
+  <div class="panel">
+    <div id="notice"></div>
+    <div class="lines" id="lines"><div style="color:var(--sub);text-align:center;font-size:calc(13*var(--k))">正在检测可用线路…</div></div>
+    <div id="empty">
+      <p>暂时没有可用线路。请开启 VPN 后重试，或稍后再试。</p>
+      <button type="button" onclick="location.reload()">重新检测</button>
+    </div>
+    <div class="slots" id="slots"></div>
+    <div class="tip"><b>请截图保存本页</b>，或收藏地址发布页，换线路时不迷路。</div>
+    <div class="disclaimer">本站只为海外华人提供服务，非法律允许地区以及 18 岁以下用户禁止访问</div>
+  </div>
+  <a class="dlbar" id="dlbar" hidden>
+    <span class="dlbar__btn"><svg viewBox="0 0 24 24"><path d="M12 3v10m0 0l-4-4m4 4l4-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 19h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>下载小黄书APP</span>
+  </a>
+</div>
+<noscript><p style="text-align:center;padding:24px">请开启 JavaScript 后访问。</p></noscript>
+<script>window.__MIDPAGE_CFG__={"mirrors":["https://paper-meadow.b-cdn.net/endpoints.json","https://brackenhill.b-cdn.net/endpoints.json","https://saltmarsh.b-cdn.net/endpoints.json","https://wodenkaka9898-max.github.io/endpoints.json"],"midpageConfig":["https://harrowdale.b-cdn.net/midpage.json","https://fernleigh.b-cdn.net/midpage.json","https://coldharbour.b-cdn.net/midpage.json","https://wodenkaka9898-max.github.io/hearthway/midpage.json"],"builtin":{"version":0,"api":["https://gw.nectarbook.com"],"web":["https://m.nectarbook.com"],"entryRoots":["nectarbook.com"],"download":["https://dl.nectarbook.com/"]},"probeTimeoutMs":5000};</script>
+<script>/*
+ * 中间页逻辑（47 号 §5.7b，260929）。
+ *
+ * 🔴 硬约束：不依赖我方 API —— 它存在的意义就是主站/API 被封时还能用。
+ *   线路来源＝清单镜像 endpoints.json（§9.1 的 entryRoots/entries/lp/download/midpage/shortlink）
+ *   按钮与文案＝midpage.json（B7 由后台生成、发到同一批镜像；缺了就用内置兜底）。
+ *   唯一会碰 API 的是「直接打开中间页时上报一次 MIDPAGE 点击」——纯 best-effort beacon，
+ *   失败即丢、绝不阻塞渲染或跳转。
+ *
+ * Q1＝只列线路、用户自选，不自动跳转。
+ */
+(function () {
+  'use strict';
+  var CFG = window.__MIDPAGE_CFG__ || {};
+  var MIRRORS = CFG.mirrors || [];              // endpoints.json 镜像 URL（按序试，第一份合法的用）
+  var MIDCFG_MIRRORS = CFG.midpageConfig || []; // midpage.json 镜像 URL
+  var BUILTIN = CFG.builtin || {};              // 兜底清单（烤入，镜像全挂时用）
+  var PROBE_TIMEOUT = CFG.probeTimeoutMs || 5000;
+  var REPORT_TIMEOUT = CFG.reportTimeoutMs || 3000;  // 单个 API 线路上报的等待上限，超时即换下一条
+  var LABEL_KEY = 'mc.lineLabel', LABEL_RE = /^[a-z0-9]{4}-[a-z0-9]{4}$/;
+  // 上报去重用的两个键，与落地页 src/attribution.js 逐字相同（中间页与落地页不同源，同名不会互相干扰）：
+  //   localStorage `mlp_vid` = 浏览器标识（服务端按它做「同一浏览器同一短码 24h 只 +1」）
+  //   sessionStorage `melon.attribution.clicked:<码>` = 本标签页已报过（刷新 / 「重新检测」不再报）
+  var VID_KEY = 'mlp_vid', CLICKED_PREFIX = 'melon.attribution.clicked:';
+
+  var q = new URLSearchParams(location.search);
+  var PASS = ['promo', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'lp', 'ref'];
+  // 🔴 审计 F-M3：URL 没带 ref 时，把本页的 document.referrer 当 ref 传给下一跳 —— 不传的话 H5 只能记到
+  //    自己的 document.referrer ＝ 中间页，真实外站来源丢失。口径同短链解析页（ShortLinkResolverPage）：
+  //    URL 已有 ref 不覆盖；referrer 是本页自身（刷新 / 站内）不算；截断 512。
+  //    ⚠️ 带 pc=1 进来（上游 LP 没拿到 referrer 时）同样补：补上的是 LP 的来源，与改版前 LP 直链 H5 时 H5 看到的一致。
+  var REF = (function () {
+    var r = q.get('ref');
+    if (r) return r;
+    var d = ''; try { d = document.referrer || ''; } catch (e) {}
+    if (!d || d.indexOf(location.origin + '/') === 0) return '';
+    return d.slice(0, 512);
+  })();
+
+  function el(id) { return document.getElementById(id); }
+  function origin(u) { var m = /^https?:\/\/[^\/?#]+/.exec(u || ''); return m ? m[0] : null; }
+  function root(u) { var m = /^https?:\/\/[^\/?#]*?([a-z0-9-]+\.[a-z0-9-]+)$/i.exec(origin(u) || ''); return m ? m[1] : null; }
+
+  // ── 本设备固定线路标签（换根不换标签，保住登录态；契约 §9.2） ──
+  var label = null;
+  try { label = localStorage.getItem(LABEL_KEY); } catch (e) {}
+  if (!LABEL_RE.test(label || '')) {
+    label = genLabel();
+    try { localStorage.setItem(LABEL_KEY, label); } catch (e) {}
+  }
+  function genLabel() {
+    try {
+      var a = 'abcdefghijklmnopqrstuvwxyz0123456789', s = '', b = new Uint8Array(8);
+      (window.crypto || window.msCrypto).getRandomValues(b);
+      for (var i = 0; i < 8; i++) { s += a.charAt(b[i] % 36); if (i === 3) s += '-'; }
+      return s;
+    } catch (e) { return 'line-home'; }
+  }
+
+  // ── 透传参数：促销码（promo/code 都收）+ utm + ref + ?path= 深链 ──
+  function buildUrl(base, extraLabel) {
+    var origin_ = base.split('{label}').join(extraLabel || label);
+    var path = q.get('path') || '';
+    if (path && path.charAt(0) !== '/') path = '/' + path;
+    var u;
+    try { u = new URL(origin_.replace(/\/+$/, '') + (path || '/')); } catch (e) { return null; }
+    return withParams(u);
+  }
+  // 线路链接与下载链接共用同一套参数（promo / utm_* / lp / ref + pc=1）
+  function withParams(u) {
+    PASS.forEach(function (k) { var v = q.get(k); if (v) u.searchParams.set(k, v); });
+    if (REF) u.searchParams.set('ref', REF);
+    var code = q.get('promo') || q.get('code'); if (code) u.searchParams.set('promo', code);
+    // 计数口径：中间页作为入口已（尽力）报过一次 ⇒ 给下一跳打 pc=1，H5 不再重复上报
+    u.searchParams.set('pc', '1');
+    return u.toString();
+  }
+  // 🔴 审计 F-M4：「下载 App」原先跳裸下载地址 ⇒ 下载页的 DL_PAGE 上报与往主站的透传全丢了码。
+  //    保留下载面自身的路径与 query，只叠加同一套参数。下载页不认 pc=1（见 melon-circle-app deploy/dl-index-*.html：
+  //    带 promo 就报 DL_PAGE），这与 LP「下载」按钮带 promo+pc=1 进下载页的现行为一致 —— 下载页是一级「落地」。
+  function dlUrl(url) { try { return withParams(new URL(url)); } catch (e) { return url; } }
+
+  // ── 拉清单 / 按钮配置：同源镜像优先 → 其余镜像并发、取先到的合法那份；全挂返回 null（调用方用内置兜底） ──
+  // 🔴 审计二轮 F2-M4：原先按固定镜像顺序逐面试、每面 PROBE_TIMEOUT(5s) ⇒ 从 GitHub 面打开而 Bunny 三面被丢包时
+  //    要干等 15 秒才出线路。现在：
+  //    ① 先取「配置里与本页同源」的那条镜像 —— 页面本身就是从这一面加载成功的，最可能通。
+  //       ⚠️ 取的是**配置里的**同源 URL，不是盲读相对路径 ./endpoints.json：同一个 GitHub 主机的
+  //       /midpage/endpoints.json 是 dev 清单、根下 /endpoints.json 是 prod 清单，盲读相对路径会让放错面的页读错环境。
+  //    ② 同源那条失败（非 2xx / 非法 / 网络错）立刻、或 HEDGE_MS 内还没回就，**并发**拉其余镜像，第一份合法的即用。
+  //       选并发不选「按序逐面」：中间页被用到时恰是有面被封的时候，按序＝把黑洞的超时一面面叠加；
+  //       并发只多几个几 KB 的 GET。代价是不再保证「靠前的镜像优先」——各面由同一次同步发布、内容相同，
+  //       只在发布那几分钟可能取到旧一版，中间页不持久化清单、下次打开即更正。
+  //    ③ 所有面都失败 ⇒ 立即 resolve(null)，不等剩余超时。
+  var HEDGE_MS = CFG.hedgeMs || 1500;
+  function fetchJson(url) {
+    return new Promise(function (resolve) {
+      var ctrl = window.AbortController ? new AbortController() : null;
+      var t = setTimeout(function () { ctrl && ctrl.abort(); resolve(null); }, PROBE_TIMEOUT);
+      fetch(url, { cache: 'no-store', signal: ctrl && ctrl.signal })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) { clearTimeout(t); resolve(j); }, function () { clearTimeout(t); resolve(null); });
+    });
+  }
+  function sameOrigin(u) { return origin(u) === location.origin; }
+  function fetchFast(urls, validate) {
+    var first = urls.filter(sameOrigin), rest = urls.filter(function (u) { return !sameOrigin(u); });
+    return new Promise(function (resolve) {
+      var done = false, pending = 0, restLaunched = false, hedge = null;
+      function settle(v) { if (done) return; done = true; clearTimeout(hedge); resolve(v); }
+      function go(url) {
+        pending++;
+        fetchJson(url).then(function (j) {
+          pending--;
+          if (done) return;
+          if (j && validate(j)) { settle(j); return; }
+          if (!restLaunched) launchRest();
+          else if (pending === 0) settle(null);
+        });
+      }
+      function launchRest() {
+        if (restLaunched || done) return;
+        restLaunched = true;
+        rest.forEach(go);
+        if (pending === 0) settle(null);
+      }
+      if (first.length) { hedge = setTimeout(launchRest, HEDGE_MS); first.forEach(go); }
+      else launchRest();
+    });
+  }
+
+  function validManifest(j) { return j && typeof j.version === 'number' && Array.isArray(j.api); }
+
+  // ── 探活：并发加载 <来源>/ping.gif，PROBE_TIMEOUT 内没加载出来算不通 ──
+  function probe(o) {
+    return new Promise(function (res) {
+      if (!o) { res(false); return; }
+      var done = false, img = new Image();
+      var t = setTimeout(function () { if (!done) { done = true; res(false); } }, PROBE_TIMEOUT);
+      img.onload = function () { if (!done) { done = true; clearTimeout(t); res(true); } };
+      img.onerror = function () { if (!done) { done = true; clearTimeout(t); res(false); } };
+      img.src = o + '/ping.gif?_=' + Date.now();
+    });
+  }
+
+  // ── 线路列表 = entryRoots(拼标签) + entries，顺序即优先级 ──
+  function linesFrom(m) {
+    var out = [];
+    (m.entryRoots || []).forEach(function (r) { out.push({ base: 'https://{label}.' + r, isRoot: true, root: r }); });
+    (m.entries || []).forEach(function (e) { out.push({ base: e, isRoot: false }); });
+    // 兜底：清单没给线路时至少给 web 候选（老字段）
+    if (!out.length) (m.web || []).forEach(function (w) { out.push({ base: w, isRoot: false }); });
+    return out;
+  }
+
+  function renderNotice() {
+    if (q.get('slink') === 'expired') {
+      var n = el('notice'); n.textContent = '你访问的活动链接已失效，请从下面选择线路进入小黄书。'; n.style.display = 'block';
+    }
+  }
+
+  function renderLines(lines, manifest) {
+    var box = el('lines'); box.innerHTML = '';
+    if (!lines.length) { el('empty').style.display = 'block'; return; }
+    lines.forEach(function (ln, idx) {
+      var a = document.createElement('a');
+      a.className = 'line'; a.setAttribute('aria-disabled', 'true');
+      a.innerHTML = '<div class="line__main">'
+        + '<div class="line__top"><span class="line__name">小黄书 · 线路 ' + (idx + 1) + '</span>'
+        + '<span class="badge badge--wait">检测中…</span></div>'
+        + '<div class="line__host">' + esc(hostOf(ln.base)) + '</div></div>'
+        + '<i class="line__chev" aria-hidden="true"></i>';
+      box.appendChild(a);
+      // 🔴 审计 F-M5：旧标签探不通、换新标签探通时，用户**真点进去**才把新标签写回 localStorage ——
+      //    不写回的话下次打开又先试旧标签、又落到新来源，每次都要重登（契约 §9.2「保住登录态」落空）。
+      //    ⚠️ 不在探通时就写：旧标签可能只是一时抖动（5 秒内没回），那时覆盖会把旧来源上的登录态白白丢掉。
+      //    点哪条写哪条的标签（含点回旧标签那条），auxclick 覆盖中键 / 新标签页打开。
+      var adopt = function () {
+        var l = a.getAttribute('data-label');
+        if (!a.getAttribute('href') || !l || l === label || !LABEL_RE.test(l)) return;
+        label = l;
+        try { localStorage.setItem(LABEL_KEY, l); } catch (e) {}
+      };
+      a.addEventListener('click', adopt);
+      a.addEventListener('auxclick', adopt);
+      probeLine(ln, function (ok, usedLabel) {
+        var badge = a.querySelector('.badge');
+        if (ok) {
+          a.href = buildUrl(ln.base, usedLabel);
+          // 🔴 审计二轮 低危a：只有泛解析线路才有「标签」可采纳。直连线路也写的话，写进去的是探测时的旧标签 ⇒
+          //    换过新标签、bfcache 恢复后再点直连线路，adopt 会把旧标签写回 mc.lineLabel。
+          if (ln.isRoot) a.setAttribute('data-label', usedLabel);
+          a.removeAttribute('aria-disabled');
+          badge.className = 'badge ' + (firstOk ? 'badge--ok' : 'badge--rec');
+          badge.textContent = firstOk ? '线路正常' : '推荐访问';
+          firstOk = true;
+          a.querySelector('.line__host').textContent = hostOf(ln.base, usedLabel);
+        } else {
+          badge.className = 'badge badge--bad'; badge.textContent = '暂不可用';
+        }
+        maybeEmpty();
+      });
+    });
+  }
+
+  var firstOk = false, pending = 0, anyOk = false;
+  function probeLine(ln, cb) {
+    pending++;
+    var lbl = label;
+    probe(origin(ln.base.split('{label}').join(lbl))).then(function (ok) {
+      if (ok) { anyOk = true; pending--; cb(true, lbl); return; }
+      // 泛解析线路：同根换一个新标签再探一次（应对按主机名封锁）
+      if (ln.isRoot) {
+        var lbl2 = genLabel();
+        probe(origin(ln.base.split('{label}').join(lbl2))).then(function (ok2) {
+          if (ok2) anyOk = true; pending--; cb(ok2, lbl2);
+        });
+      } else { pending--; cb(false, lbl); }
+    });
+  }
+  function maybeEmpty() { if (pending === 0 && !anyOk) el('empty').style.display = 'block'; }
+
+  function hostOf(base, lbl) { return (origin(base.split('{label}').join(lbl || label)) || base).replace(/^https?:\/\//, ''); }
+
+  // ── 工具：下载 App（探 download 各面取第一个通的）+ 福利导航等由 midpage.json 决定 ──
+  function renderTools(manifest) {
+    var dl = (manifest.download || [])[0];
+    if (!dl) return;
+    var bar = el('dlbar');
+    bar.href = dlUrl(dl); bar.removeAttribute('hidden');
+    // 探第一个可达的下载面
+    (manifest.download || []).reduce(function (p, url) {
+      return p.then(function (found) {
+        if (found) return found;
+        return probe(url.replace(/\/+$/, '')).then(function (ok) { if (ok) { bar.href = dlUrl(url); return url; } return null; });
+      });
+    }, Promise.resolve(null));
+  }
+
+  // ── 外联按钮槽位（midpage.json）：配了且启用才显示，自动重排 ──
+  var ICONS = {
+    home: '<svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-4v-6h-4v6H5v-9H2z"/></svg>',
+    telegram: '<svg viewBox="0 0 24 24"><path d="M21.5 4.3L2.9 11.4c-.9.3-.9 1.5 0 1.8l4.6 1.4 1.8 5.3c.2.6 1 .8 1.5.3l2.5-2.4 4.5 3.3c.6.4 1.4.1 1.6-.6L23 5.5c.2-.9-.7-1.6-1.5-1.2z"/></svg>',
+    twitter: '<svg viewBox="0 0 24 24"><path d="M3 3l7.5 10L3.3 21H6l6-6.4L16.7 21H21l-7.8-10.4L20.6 3H18l-5.4 5.8L8.3 3z"/></svg>',
+    qq: '<svg viewBox="0 0 24 24"><path d="M12 2c3 0 5 2.4 5 5.6 0 1.3.9 2 1.6 3.4.6 1.2 1.4 3.1 1.1 4.5-.2.9-1 .6-1.6-.3-.3.9-.9 1.7-1.6 2.3.7.3 1.2.7 1.2 1.2 0 .8-2.6 1.5-6 1.5s-6-.7-6-1.5c0-.5.5-.9 1.2-1.2-.7-.6-1.3-1.4-1.6-2.3-.6.9-1.4 1.2-1.6.3-.3-1.4.5-3.3 1.1-4.5C6.1 9.6 7 8.9 7 7.6 7 4.4 9 2 12 2z"/></svg>',
+    publish: '<svg viewBox="0 0 24 24"><path d="M4 4h16v3H4zm0 5h16v3H4zm0 5h11v3H4z"/></svg>',
+    email: '<svg viewBox="0 0 24 24"><path d="M3 5h18v14H3z" fill="none" stroke="#fff" stroke-width="2"/><path d="M4 6.5l8 6 8-6" fill="none" stroke="#fff" stroke-width="2"/></svg>'
+  };
+  function renderSlots(midcfg) {
+    var box = el('slots'); box.innerHTML = '';
+    var slots = (midcfg && midcfg.slots) || [];
+    slots.forEach(function (s) {
+      if (!s || s.enabled === false || !s.url || !/^https:\/\//.test(s.url)) return; // 配了才显示
+      var a = document.createElement('a');
+      a.className = 'slot'; a.href = s.url; a.target = '_blank'; a.rel = 'noopener';
+      a.innerHTML = (ICONS[s.type] || ICONS.home) + '<span>' + esc(s.label || '') + '</span>';
+      box.appendChild(a);
+    });
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  // ── 浏览器标识（同落地页 attribution.js 的 visitorId()）：拿不到 storage 就不带，服务端退回 IP+UA ──
+  function visitorId() {
+    try {
+      var v = localStorage.getItem(VID_KEY);
+      if (!v) {
+        v = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+          : 'v-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+        localStorage.setItem(VID_KEY, v);
+      }
+      return v;
+    } catch (e) { return ''; }
+  }
+
+  // ── best-effort 上报一次 MIDPAGE 点击（直接打开时；pc=1 说明上游已报，不再报） ──
+  // 🔴 审计 F-M1：必须带 visitorId + 会话去重标记。不带时服务端只能按 IP+UA 判重，而经 CDN 回源看到的
+  //    是轮换的边缘 IP ⇒ 刷新一次、点一次「重新检测」（= location.reload）就多计一次。
+  // 🔴 审计 F-M2：按 manifest.api 顺序逐条试，第一条 2xx 即停。只打 api[0] 时，主 API 不通（恰是中间页
+  //    被用到的场景）这次入口就在任何来源都是 0 —— 下一跳已带 pc=1，H5 也不会补。
+  //    ⚠️ 时序取舍：尝试链靠 then 推进，页面一卸载（用户点了线路）后续就不会再跑。在途的那条有 keepalive
+  //    会继续发完；另在 pagehide 时对「下一条还没试的」补发一次 keepalive（只补一条，不是全部）——
+  //    在途那条若其实只是慢、最终也成功，服务端会多一行明细，但带同一 visitorId ⇒ 标 duplicated、不 +1。
+  //    绝不为上报阻塞渲染或跳转。
+  function reportMidpage(manifest) {
+    var code = q.get('promo') || q.get('code');
+    if (!code || q.get('pc') === '1' || q.get('via') === 's') return;
+    var apis = (manifest.api || []).filter(function (a) { return typeof a === 'string' && a; });
+    if (!apis.length) return;
+    var sk = CLICKED_PREFIX + code;
+    try { if (sessionStorage.getItem(sk)) return; } catch (e) {}   // 隐私模式禁 storage ⇒ 不去重，宁多勿漏
+    var body = JSON.stringify({ code: code, source: 'MIDPAGE', visitorId: visitorId() || undefined });
+    var i = 0, done = false;
+
+    function send(base, timeoutMs) {
+      return new Promise(function (res) {
+        var ctrl = timeoutMs && window.AbortController ? new AbortController() : null;
+        var t = ctrl ? setTimeout(function () { ctrl.abort(); }, timeoutMs) : null;
+        try {
+          fetch(base.replace(/\/+$/, '') + '/api/v1/promo-links/click', {
+            method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' },
+            body: body, signal: ctrl ? ctrl.signal : undefined
+          }).then(function (r) { clearTimeout(t); res(!!(r && r.ok)); },
+                  function () { clearTimeout(t); res(false); });
+        } catch (e) { clearTimeout(t); res(false); }
+      });
+    }
+    function next() {
+      if (done || i >= apis.length) return;
+      send(apis[i++], REPORT_TIMEOUT).then(function (ok) {
+        if (done) return;
+        if (ok) {
+          done = true;
+          // 标记只在服务端确认收到（2xx）后写：没发成功就占位，本会话再回来永远补不上（落地页同款教训）
+          try { sessionStorage.setItem(sk, '1'); } catch (e) {}
+        } else next();
+      });
+    }
+    try {
+      window.addEventListener('pagehide', function () {
+        if (done || i >= apis.length) return;
+        done = true;
+        send(apis[i++], 0);   // 卸载中：不设超时（abort 定时器随页面一起消失），交给 keepalive
+      });
+    } catch (e) {}
+    next();
+  }
+
+  // ── 启动 ──
+  (function setHero() {
+    var img = new Image();
+    img.onload = function () { var e = el('hero-photo'); if (e) e.style.setProperty('--hero', 'url(hero.jpg)'); };
+    img.src = 'hero.jpg';   // 相对本页 origin；加载不出就保持黄色品牌底
+  })();
+  renderNotice();
+  // 🔴 审计二轮 F2-M4：线路渲染**不等**按钮配置（原先 Promise.all 两份都到才渲染 ⇒ midpage.json 被丢包时线路也跟着等）。
+  //    两份各拉各的：清单到了就出线路，按钮配置到了再补渲染按钮区。
+  var midcfgP = fetchFast(MIDCFG_MIRRORS, function (j) { return j && Array.isArray(j.slots); });
+  fetchFast(MIRRORS, validManifest).then(function (m) {
+    var manifest = m || BUILTIN;
+    if (!manifest || !manifest.api) { el('lines').innerHTML = ''; el('empty').style.display = 'block'; return; }
+    reportMidpage(manifest);
+    renderLines(linesFrom(manifest), manifest);
+    renderTools(manifest);
+  });
+  midcfgP.then(function (c) { renderSlots(c || CFG.builtinMidpage || null); });
+})();
+</script>
+</body>
+</html>
